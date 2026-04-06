@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #07070C;
+  --card: #13131F;
+  --border: #1E1E30;
+  --accent: #F97316;
+  --success: #22C55E;
+  --warning: #EAB308;
+  --error: #EF4444;
+  --penny: #A855F7;
+  --blue: #60A5FA;
+  --text: #F1F5F9;
+  --muted: #64748B;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Pulse animation for hot stores */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
 }
+.pulse-hot { animation: pulse-ring 2s infinite; }
+
+/* Live ticker animation */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-scroll { animation: scroll-left 30s linear infinite; }
+
+/* Leaflet overrides */
+.leaflet-container { background: var(--bg) !important; }
+.leaflet-popup-content-wrapper { background: var(--card) !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }
+.leaflet-popup-tip { background: var(--card) !important; }

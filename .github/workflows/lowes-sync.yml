@@ -1,0 +1,37 @@
+name: Lowes Sync
+
+on:
+  schedule:
+    - cron: "0 */12 * * *" # every 12 hours (be respectful with scraping)
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r workers/requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install chromium
+
+      - name: Run Lowes sync
+        run: python workers/lowes_sync.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DISCORD_DEALS_WEBHOOK: ${{ secrets.DISCORD_DEALS_WEBHOOK }}
+          DISCORD_PENNY_WEBHOOK: ${{ secrets.DISCORD_PENNY_WEBHOOK }}
+
+      - name: Run UPC enrichment
+        run: python workers/enrich_products.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

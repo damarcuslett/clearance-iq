@@ -1,0 +1,19 @@
+name: AI Deal Scoring
+
+on:
+  schedule:
+    - cron: "*/15 * * * *" # every 15 minutes
+  workflow_dispatch:
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger AI batch scoring
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/ai/score-batch?limit=50"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

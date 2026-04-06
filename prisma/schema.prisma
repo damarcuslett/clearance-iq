@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Retailer {
+  id           String    @id @default(cuid())
+  key          String    @unique
+  name         String
+  logoUrl      String?
+  color        String
+  apiType      String
+  isActive     Boolean   @default(true)
+  lastSyncedAt DateTime?
+  stores       Store[]
+  deals        Deal[]
+  syncLogs     SyncLog[]
+}
+
+model Store {
+  id          String   @id @default(cuid())
+  retailerId  String
+  retailer    Retailer @relation(fields: [retailerId], references: [id])
+  name        String
+  address     String
+  city        String
+  state       String   @default("OH")
+  zip         String
+  lat         Float
+  lng         Float
+  storeNumber String
+  phone       String?
+  isActive    Boolean  @default(true)
+  deals       Deal[]
+
+  @@index([retailerId, zip])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  upc         String      @unique
+  sku         String?
+  name        String
+  brand       String?
+  category    String?
+  imageUrl    String?
+  msrp        Float?
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deals       Deal[]
+  watchlists  Watchlist[]
+
+  @@index([upc])
+}
+
+model Deal {
+  id             String         @id @default(cuid())
+  productId      String
+  product        Product        @relation(fields: [productId], references: [id])
+  storeId        String
+  store          Store          @relation(fields: [storeId], references: [id])
+  retailerId     String
+  retailer       Retailer       @relation(fields: [retailerId], references: [id])
+  currentPrice   Float
+  originalPrice  Float
+  discountPct    Int
+  dealType       String
+  inStock        Boolean        @default(true)
+  quantity       Int?
+  aisle          String?
+  bay            String?
+  sourceUrl      String?
+  aiScore        Float?
+  aiScoreReason  String?
+  foundAt        DateTime       @default(now())
+  lastVerifiedAt DateTime       @default(now())
+  expiresAt      DateTime?
+  isActive       Boolean        @default(true)
+  priceHistory   PriceHistory[]
+  alerts         AlertLog[]
+
+  @@index([retailerId, dealType, discountPct, isActive, foundAt])
+  @@index([storeId, isActive])
+  @@index([discountPct, isActive])
+}
+
+model PriceHistory {
+  id         String   @id @default(cuid())
+  dealId     String
+  deal       Deal     @relation(fields: [dealId], references: [id])
+  price      Float
+  recordedAt DateTime @default(now())
+
+  @@index([dealId, recordedAt])
+}
+
+model Watchlist {
+  id            String     @id @default(cuid())
+  productId     String?
+  product       Product?   @relation(fields: [productId], references: [id])
+  upc           String
+  productName   String
+  targetPrice   Float?
+  minDiscount   Int        @default(70)
+  notifyEmail   Boolean    @default(true)
+  notifyPush    Boolean    @default(true)
+  notifyDiscord Boolean    @default(false)
+  watchAllOhio  Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  lastAlertedAt DateTime?
+  alerts        AlertLog[]
+}
+
+model PushSubscription {
+  id       String   @id @default(cuid())
+  endpoint String   @unique
+  p256dh   String
+  auth     String
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
+}
+
+model AlertLog {
+  id          String     @id @default(cuid())
+  dealId      String?
+  deal        Deal?      @relation(fields: [dealId], references: [id])
+  watchlistId String?
+  watchlist   Watchlist? @relation(fields: [watchlistId], references: [id])
+  channel     String
+  subject     String?
+  message     String
+  sentAt      DateTime   @default(now())
+  success     Boolean    @default(true)
+  error       String?
+
+  @@index([channel, sentAt])
+}
+
+model SyncLog {
+  id           String    @id @default(cuid())
+  retailerId   String
+  retailer     Retailer  @relation(fields: [retailerId], references: [id])
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  itemsScanned Int       @default(0)
+  dealsFound   Int       @default(0)
+  dealsBelow70 Int       @default(0)
+  status       String
+  errorMessage String?
+
+  @@index([retailerId, startedAt])
+}
+
+model ManualDeal {
+  id            String   @id @default(cuid())
+  retailerId    String
+  storeId       String?
+  productName   String
+  upc           String?
+  price         Float
+  originalPrice Float
+  discountPct   Int
+  photoUrl      String?
+  submittedAt   DateTime @default(now())
+  verified      Boolean  @default(false)
+}

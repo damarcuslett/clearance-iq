@@ -1,0 +1,40 @@
+name: Walmart Sync
+
+on:
+  schedule:
+    - cron: "0 */4 * * *" # every 4 hours
+  workflow_dispatch: # manual trigger button
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r workers/requirements.txt
+
+      - name: Install Playwright browser
+        run: playwright install chromium
+
+      - name: Run Walmart sync
+        run: python workers/walmart_sync.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          WALMART_API_KEY: ${{ secrets.WALMART_API_KEY }}
+          DISCORD_DEALS_WEBHOOK: ${{ secrets.DISCORD_DEALS_WEBHOOK }}
+          DISCORD_PENNY_WEBHOOK: ${{ secrets.DISCORD_PENNY_WEBHOOK }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+
+      - name: Run UPC enrichment
+        run: python workers/enrich_products.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

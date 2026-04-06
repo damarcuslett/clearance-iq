@@ -1,65 +1,212 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { DealCard } from "@/components/deal-card";
+import { DealModal } from "@/components/deal-modal";
+import { PageHeader } from "@/components/page-header";
+import { fetchJSON } from "@/lib/api";
+import type { DealsResponse, StatsResponse, DealWithRelations } from "@/lib/types";
+
+const RETAILERS = ["walmart", "homedepot", "target", "bestbuy", "lowes", "menards", "amazon"];
+const DEAL_TYPES = ["PENNY", "CLEARANCE", "HIDDEN", "OPEN_BOX", "LIGHTNING"];
+
+export default function CommandCenter() {
+  const [retailer, setRetailer] = useState<string | null>(null);
+  const [dealType, setDealType] = useState<string | null>(null);
+  const [minDiscount, setMinDiscount] = useState(70);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [selected, setSelected] = useState<DealWithRelations | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (retailer) p.set("retailer", retailer);
+    if (dealType) p.set("dealType", dealType);
+    p.set("minDiscount", String(minDiscount));
+    if (inStockOnly) p.set("inStock", "true");
+    p.set("limit", "60");
+    return p.toString();
+  }, [retailer, dealType, minDiscount, inStockOnly]);
+
+  const stats = useQuery({
+    queryKey: ["stats"],
+    queryFn: () => fetchJSON<StatsResponse>("/api/stats"),
+  });
+
+  const deals = useQuery({
+    queryKey: ["deals", qs],
+    queryFn: () => fetchJSON<DealsResponse>(`/api/deals?${qs}`),
+    enabled: !searchQuery,
+  });
+
+  const search = useQuery({
+    queryKey: ["search", searchQuery],
+    queryFn: () =>
+      fetchJSON<{ deals: DealWithRelations[]; total: number }>(
+        `/api/search?q=${encodeURIComponent(searchQuery ?? "")}`
+      ),
+    enabled: !!searchQuery,
+  });
+
+  const activeDeals = searchQuery ? search.data?.deals ?? [] : deals.data?.deals ?? [];
+  const activeTotal = searchQuery ? search.data?.total ?? 0 : deals.data?.total ?? 0;
+  const isLoading = searchQuery ? search.isLoading : deals.isLoading;
+  const isError = searchQuery ? search.isError : deals.isError;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div>
+      <PageHeader
+        title="Command Center"
+        subtitle="Live clearance feed · 70%+ off only"
+        right={
+          <div className="flex items-center gap-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearchQuery(searchInput.trim() || null);
+              }}
+              className="flex items-center gap-2"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Ask AI: power tools under $50 near Columbus"
+                className="bg-[var(--bg)] border border-[var(--border)] rounded px-3 py-1.5 text-xs w-80"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(null);
+                    setSearchInput("");
+                  }}
+                  className="text-[var(--muted)] text-xs hover:text-[var(--text)]"
+                >
+                  clear
+                </button>
+              )}
+              {searchQuery && (
+                <span className="text-[10px] font-bold px-2 py-1 rounded bg-[var(--penny)]/20 text-[var(--penny)]">
+                  AI SEARCH
+                </span>
+              )}
+            </form>
+            <div className="text-xs text-[var(--muted)] font-mono">
+              {activeTotal} results
+            </div>
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-6 border-b border-[var(--border)]">
+        <StatCard label="Deals Today" value={stats.data?.dealsFoundToday ?? 0} />
+        <StatCard label="Penny Deals" value={stats.data?.pennyDeals ?? 0} accent="penny" />
+        <StatCard label="Active Total" value={stats.data?.totalActiveDeals ?? 0} />
+        <StatCard label="Avg Discount" value={`${stats.data?.avgDiscount ?? 0}%`} />
+        <StatCard label="Stores Live" value={stats.data?.storesLive ?? 0} />
+      </div>
+
+      <div className="flex">
+        <div className="hidden lg:block w-64 shrink-0 border-r border-[var(--border)] p-5 space-y-5 min-h-[calc(100vh-13rem)]">
+          <FilterGroup label="Retailer">
+            <select
+              value={retailer ?? ""}
+              onChange={(e) => setRetailer(e.target.value || null)}
+              className="w-full bg-[var(--bg)] border border-[var(--border)] rounded px-2 py-1.5 text-sm"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              <option value="">All retailers</option>
+              {RETAILERS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </FilterGroup>
+
+          <FilterGroup label="Deal Type">
+            <select
+              value={dealType ?? ""}
+              onChange={(e) => setDealType(e.target.value || null)}
+              className="w-full bg-[var(--bg)] border border-[var(--border)] rounded px-2 py-1.5 text-sm"
+            >
+              <option value="">All types</option>
+              {DEAL_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </FilterGroup>
+
+          <FilterGroup label={`Min Discount: ${minDiscount}%`}>
+            <input
+              type="range"
+              min={70}
+              max={99}
+              value={minDiscount}
+              onChange={(e) => setMinDiscount(parseInt(e.target.value, 10))}
+              className="w-full accent-[var(--accent)]"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </FilterGroup>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => setInStockOnly(e.target.checked)}
+              className="accent-[var(--accent)]"
+            />
+            In-stock only
+          </label>
         </div>
-      </main>
+
+        <div className="flex-1 p-6">
+          {isLoading && <div className="text-[var(--muted)]">Loading deals…</div>}
+          {isError && <div className="text-[var(--error)]">Failed to load deals.</div>}
+          {!isLoading && activeDeals.length === 0 && (
+            <div className="text-[var(--muted)]">No deals match your filters.</div>
+          )}
+          {activeDeals.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {activeDeals.map((d) => (
+                <DealCard key={d.id} deal={d} onClick={() => setSelected(d)} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <DealModal deal={selected} onClose={() => setSelected(null)} />
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent?: "penny";
+}) {
+  return (
+    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--muted)]">{label}</div>
+      <div
+        className={`text-2xl font-bold font-mono mt-1 ${
+          accent === "penny" ? "text-[var(--penny)]" : "text-[var(--accent)]"
+        }`}
+      >
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </div>
+    </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-[var(--muted)] mb-2">{label}</div>
+      {children}
     </div>
   );
 }
