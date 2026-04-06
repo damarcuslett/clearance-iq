@@ -205,13 +205,16 @@ def sync_homedepot() -> None:
     print(f"{'='*60}\n")
 
     if not HD_API_KEY:
-        print("  [ERROR] HOME_DEPOT_API_KEY not set. Exiting.")
+        print("  [SKIP] HOME_DEPOT_API_KEY not configured — skipping run (not a failure).")
         if not DRY_RUN:
-            supabase = get_supabase()
-            log_sync_to_supabase(
-                supabase, "homedepot", started, 0, 0, 0, "error",
-                error="HOME_DEPOT_API_KEY not configured",
-            )
+            try:
+                supabase = get_supabase()
+                log_sync_to_supabase(
+                    supabase, "homedepot", started, 0, 0, 0, "skipped",
+                    error="HOME_DEPOT_API_KEY not configured",
+                )
+            except Exception as exc:
+                print(f"  [WARN] could not log skip: {exc}")
         return
 
     supabase = get_supabase() if not DRY_RUN else None

@@ -185,13 +185,16 @@ def sync_bestbuy() -> None:
     print(f"{'='*60}\n")
 
     if not BB_API_KEY:
-        print("  [ERROR] BEST_BUY_API_KEY not set. Exiting.")
+        print("  [SKIP] BEST_BUY_API_KEY not configured — skipping run (not a failure).")
         if not DRY_RUN:
-            supabase = get_supabase()
-            log_sync_to_supabase(
-                supabase, "bestbuy", started, 0, 0, 0, "error",
-                error="BEST_BUY_API_KEY not configured",
-            )
+            try:
+                supabase = get_supabase()
+                log_sync_to_supabase(
+                    supabase, "bestbuy", started, 0, 0, 0, "skipped",
+                    error="BEST_BUY_API_KEY not configured",
+                )
+            except Exception as exc:
+                print(f"  [WARN] could not log skip: {exc}")
         return
 
     supabase = get_supabase() if not DRY_RUN else None
