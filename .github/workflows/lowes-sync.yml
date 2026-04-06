@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "0 */12 * * *" # every 12 hours (be respectful with scraping)
   workflow_dispatch:
+  push:
+    paths:
+      - "workers/**"
+      - ".github/workflows/lowes-sync.yml"
 
 jobs:
   sync:

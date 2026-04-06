@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "0 */4 * * *" # every 4 hours
   workflow_dispatch:
+  push:
+    paths:
+      - "workers/**"
+      - ".github/workflows/bestbuy-sync.yml"
 
 jobs:
   sync:
