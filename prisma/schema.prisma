@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Retailer {
-  id           String    @id @default(cuid())
+  id           String    @id @default(dbgenerated("gen_random_uuid()::text"))
   key          String    @unique
   name         String
   logoUrl      String?
@@ -22,7 +22,7 @@ model Retailer {
 }
 
 model Store {
-  id          String   @id @default(cuid())
+  id          String   @id @default(dbgenerated("gen_random_uuid()::text"))
   retailerId  String
   retailer    Retailer @relation(fields: [retailerId], references: [id])
   name        String
@@ -41,7 +41,7 @@ model Store {
 }
 
 model Product {
-  id          String      @id @default(cuid())
+  id          String      @id @default(dbgenerated("gen_random_uuid()::text"))
   upc         String      @unique
   sku         String?
   name        String
@@ -59,7 +59,7 @@ model Product {
 }
 
 model Deal {
-  id             String         @id @default(cuid())
+  id             String         @id @default(dbgenerated("gen_random_uuid()::text"))
   productId      String
   product        Product        @relation(fields: [productId], references: [id])
   storeId        String
@@ -90,7 +90,7 @@ model Deal {
 }
 
 model PriceHistory {
-  id         String   @id @default(cuid())
+  id         String   @id @default(dbgenerated("gen_random_uuid()::text"))
   dealId     String
   deal       Deal     @relation(fields: [dealId], references: [id])
   price      Float
@@ -100,7 +100,7 @@ model PriceHistory {
 }
 
 model Watchlist {
-  id            String     @id @default(cuid())
+  id            String     @id @default(dbgenerated("gen_random_uuid()::text"))
   productId     String?
   product       Product?   @relation(fields: [productId], references: [id])
   upc           String
@@ -117,7 +117,7 @@ model Watchlist {
 }
 
 model PushSubscription {
-  id       String   @id @default(cuid())
+  id       String   @id @default(dbgenerated("gen_random_uuid()::text"))
   endpoint String   @unique
   p256dh   String
   auth     String
@@ -126,7 +126,7 @@ model PushSubscription {
 }
 
 model AlertLog {
-  id          String     @id @default(cuid())
+  id          String     @id @default(dbgenerated("gen_random_uuid()::text"))
   dealId      String?
   deal        Deal?      @relation(fields: [dealId], references: [id])
   watchlistId String?
@@ -142,7 +142,7 @@ model AlertLog {
 }
 
 model SyncLog {
-  id           String    @id @default(cuid())
+  id           String    @id @default(dbgenerated("gen_random_uuid()::text"))
   retailerId   String
   retailer     Retailer  @relation(fields: [retailerId], references: [id])
   startedAt    DateTime  @default(now())
@@ -157,7 +157,7 @@ model SyncLog {
 }
 
 model ManualDeal {
-  id            String   @id @default(cuid())
+  id            String   @id @default(dbgenerated("gen_random_uuid()::text"))
   retailerId    String
   storeId       String?
   productName   String
