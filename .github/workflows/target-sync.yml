@@ -22,7 +22,7 @@ jobs:
       - name: Run Target sync
         run: python workers/target_sync.py
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           DISCORD_DEALS_WEBHOOK: ${{ secrets.DISCORD_DEALS_WEBHOOK }}
           DISCORD_PENNY_WEBHOOK: ${{ secrets.DISCORD_PENNY_WEBHOOK }}
@@ -30,5 +30,5 @@ jobs:
       - name: Run UPC enrichment
         run: python workers/enrich_products.py
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

@@ -22,7 +22,7 @@ jobs:
       - name: Run Best Buy sync
         run: python workers/bestbuy_sync.py
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BEST_BUY_API_KEY: ${{ secrets.BEST_BUY_API_KEY }}
           DISCORD_DEALS_WEBHOOK: ${{ secrets.DISCORD_DEALS_WEBHOOK }}
@@ -31,5 +31,5 @@ jobs:
       - name: Run UPC enrichment
         run: python workers/enrich_products.py
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
