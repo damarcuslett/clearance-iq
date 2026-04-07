@@ -1,8 +1,6 @@
 name: Weekly Summary
 
 on:
-  schedule:
-    - cron: "0 13 * * 0" # 8 AM EST Sunday
   workflow_dispatch:
 
 jobs:

@@ -1,8 +1,6 @@
 name: Lowes Sync
 
 on:
-  schedule:
-    - cron: "0 */12 * * *" # every 12 hours (be respectful with scraping)
   workflow_dispatch:
   push:
     paths:

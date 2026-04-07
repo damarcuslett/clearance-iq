@@ -1,8 +1,6 @@
 name: Home Depot Sync
 
 on:
-  schedule:
-    - cron: "0 */6 * * *" # every 6 hours
   workflow_dispatch: # manual trigger button
   push:
     paths:

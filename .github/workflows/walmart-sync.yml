@@ -1,8 +1,6 @@
 name: Walmart Sync
 
 on:
-  schedule:
-    - cron: "0 */4 * * *" # every 4 hours
   workflow_dispatch: # manual trigger button
   push:
     paths:
